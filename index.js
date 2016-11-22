@@ -1,19 +1,17 @@
 module.exports = enableDestroy;
 
 function enableDestroy(server) {
-  var connections = {}
+  const connections = new Set();
 
-  server.on('connection', function(conn) {
-    var key = conn.remoteAddress + ':' + conn.remotePort;
-    connections[key] = conn;
-    conn.on('close', function() {
-      delete connections[key];
+  server.on('connection', (conn) => {
+    connections.add(conn);
+    conn.once('close', function() {
+      connections.delete(conn);
     });
   });
 
   server.destroy = function(cb) {
     server.close(cb);
-    for (var key in connections)
-      connections[key].destroy();
+    connections.forEach(conn => conn.destroy());
   };
 }
